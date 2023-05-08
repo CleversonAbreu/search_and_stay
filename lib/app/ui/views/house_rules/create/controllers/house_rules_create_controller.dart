@@ -13,6 +13,7 @@ class HouseRulesCreateController extends ChangeNotifier {
 
   ValueNotifier<bool> isChecked = ValueNotifier(false);
   ValueNotifier<bool> isLoading = ValueNotifier(false);
+  ValueNotifier<bool> progress = ValueNotifier(false);
 
   late int order;
   late int active;

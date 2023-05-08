@@ -17,8 +17,7 @@ class HouseRulesService extends ChangeNotifier {
     try{
       var response = await http.get(
           Uri.parse(
-              'https://sys-dev.searchandstay.com/api/admin/house_rules?page=' +
-                  _page.toString()),
+              'https://sys-dev.searchandstay.com/api/admin/house_rules?page=$_page'),
           headers: {
             "Content-Type": "application/json",
             "Accept": "application/json",

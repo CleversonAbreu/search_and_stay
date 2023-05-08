@@ -8,11 +8,11 @@ import '../../../../../utils/message.dart';
 
 class HouseRulesListController with ChangeNotifier{
   late HouseRulesService houseRulesService;
-  late HouseRulesModel houseRulesModel;
+  //late HouseRulesModel houseRulesModel;
   late ScrollController scrollController;
   LoggedUser? loggedUser;
   final loading = ValueNotifier(true);
-  bool progress = false;
+  final progress = ValueNotifier(false);
   bool? show = false;
 
   void getPreferences() async {
@@ -26,10 +26,31 @@ class HouseRulesListController with ChangeNotifier{
     notifyListeners();
   }
 
+  loadHouseRules( ) async {
+      progress.value = !progress.value;
+      notifyListeners();
+    try{
+      await houseRulesService.getEntities();
+    }catch(error){
+      //showError(error,context);
+      print(error);
+    }
+      progress.value = !progress.value;
+      notifyListeners();
+  }
+
+  infiniteScrolling() {
+    if (scrollController.position.pixels ==
+        scrollController.position.maxScrollExtent &&
+        loading.value) {
+      loadHouseRules();
+    }
+  }
+
   void noDelete(BuildContext context){
     Message.snackMessage(
         Colors.red, 'You should be logged to delete rules', null, context);
-    Timer(Duration(seconds: 2), () {
+    Timer(const Duration(seconds: 2), () {
       Navigator.pushNamedAndRemoveUntil(
           context, '/searchList', (route) => false);
     });
@@ -50,7 +71,7 @@ class HouseRulesListController with ChangeNotifier{
             Colors.black26, 'House Rule removed error', null, context);
       }
     }catch(error){
-      //Message.snackMessage(Colors.red, error, null, context);
+      Message.snackMessage(Colors.red, error, null, context);
       Navigator.pushNamedAndRemoveUntil(context, '/searchList', (route) => false);
     }
   }

@@ -1,87 +1,81 @@
 import 'package:flutter/material.dart';
-import '../../../../../data/sources/cache/logged_user.dart';
 import '../../../../../infra/services/house_rules_service.dart';
+import '../controllers/house_rules_list_controller.dart';
 
 class Body extends StatelessWidget {
-  LoggedUser  loggedUser = LoggedUser();
-  final Function(String id) delete;
-  Body(this.loggedUser, this.delete, {super.key});
+  late HouseRulesService houseRulesService;
+  final ScrollController scrollController;
+  ValueNotifier<bool> progress;
+  //bool? progress;
+  HouseRulesListController houseRulesListController;
+
+  Body({ required this.houseRulesService,required this.scrollController,required this.progress,required this.houseRulesListController});
 
   @override
   Widget build(BuildContext context) {
-    return FutureBuilder<List>(
-      future: HouseRulesService().getEntities(),
+    return  AnimatedBuilder(
+      animation: houseRulesService,
       builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Center(child: CircularProgressIndicator());
-        } else if (snapshot.connectionState == ConnectionState.done) {
-          if (snapshot.hasError) {
-            return Center(child: Text(snapshot.error.toString().toLowerCase()));
-          } else if (snapshot.hasData) {
-            return ListView.separated(
-              scrollDirection: Axis.vertical,
-              shrinkWrap: true,
-              itemBuilder: (context, index) {
-                return Column(children: [
-                  GestureDetector(
+        return Stack(
+          children: [
+            ListView.separated(
+                controller: scrollController,
+                itemBuilder: ((context, index) {
+
+                  final houseRule = houseRulesService.houseRulesModel[index];
+                  return GestureDetector(
                     child: Dismissible(
-                      key: Key(snapshot.data![index].id.toString()),
+                      key: Key(houseRule.id.toString()),
                       onDismissed: (direction) {
-                        if(loggedUser.active == true)
-                            delete(snapshot.data![index].id.toString());
+                        if (houseRulesListController!.show == true) {
+                          houseRulesListController!
+                              .delete(houseRule.id.toString(), context);
+                        } else {
+                          houseRulesListController!.noDelete(context);
+                        }
                       },
                       child: Column(
                         children: [
                           ListTile(
-                            title: Text('${snapshot.data![index].id} - ' +
-                                snapshot.data?[index].name),
+                            leading: ClipRRect(
+                              borderRadius: BorderRadius.circular(50),
+                              child: Image.asset('images/no_image_icon.png'),
+                            ),
+                            title:
+                            Text('${houseRule.id} - ${houseRule.name}'),
                             subtitle: Text(
-                                snapshot.data?[index].active == 1
-                                    ? 'Active'
-                                    : 'Inactive',
+                                houseRule.active == 1 ? 'Active' : 'Inactive',
                                 style: const TextStyle(fontSize: 12)),
                             trailing: Row(
                                 mainAxisSize: MainAxisSize.min,
-                                children: loggedUser.active == true
+                                children: houseRulesListController!
+                                    .loggedUser!.active ==
+                                    true
                                     ? <Widget>[
-                                        const Icon(Icons.keyboard_arrow_left),
-                                        const Icon(Icons.delete),
-                                      ]
+                                  const Icon(Icons.keyboard_arrow_left),
+                                  const Icon(Icons.delete),
+                                ]
                                     : <Widget>[]),
-                            leading: const CircleAvatar(
-                              radius: 25,
-                              backgroundColor: Colors.white,
-                              backgroundImage:
-                                  AssetImage('images/no_image_icon.png'),
-                            ),
-                          ),
-                          const Divider(
-                            color: Colors.grey,
-                            indent: 39,
-                            endIndent: 28,
-                            height: 10,
                           ),
                         ],
                       ),
                     ),
                     onTap: () {
                       Navigator.pushNamed(context, '/entity', arguments: {
-                        'id': snapshot.data?[index].id,
+                        'id': houseRule.id,
                         'image': 'images/no_image_icon.png'
                       });
                     },
-                  ),
-                ]);
-              },
-              separatorBuilder: (context, index) => const Divider(
-                height: 0.5,
-                color: Colors.white,
-              ),
-              itemCount: snapshot.data!.length,
-            );
-          }
-        }
-        return Container();
+                  );
+                }),
+                separatorBuilder: (_, __) => const Divider(),
+                itemCount: houseRulesService.houseRulesModel.length),
+            //progress == true
+             progress.value == true
+                ? const Center(child: CircularProgressIndicator())
+                : Container()
+          ],
+        );
       },
     );
   }
